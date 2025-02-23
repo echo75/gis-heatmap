@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Heatmap Ozonwerte für Österreich</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<link rel="stylesheet" href="leaflet/leaflet.css" />
+		<style>
+			footer { margin-top:20px; }
+		</style>
+	</head>
+<body>
+		<div id="map" style="width:800px; height:580px;"></div>
+		<section style="font-family:Verdana, Arial, sans-serif;font-size:14px;width:800px;">
+			<h3>Heatmap der Ozonwerte in Österreich.</h3>
+			Bei den Werten handelt es sich um den jeweiligen Maximalwert an Ozon, gemessen von den Messstationen am <strong>14. September 2020</strong>. Die Marker werden nicht eingeblendet, da man sonst die Heatmap nicht so gut erkennen würde.<br />
+			<strong>Zur Darstellung:</strong> Da die Messstationen ziemlich weit auseinander liegen, kommt es nicht so stark zu Überlagerungen und damit nicht zu Verstärkungen der Gelb-, Orange- und der Rottönen.<br />
+			<br />
+			<button type='button' id='zoomIn'>Zoom in</button>
+			<button type='button' id='zoomOut'>Zoom out</button>
+			<button type='button' id='resetToStart'>Reset</button>
+	  </section>
+		<footer>
+			<button type='button' id='FensterSchliessen'>> Fenster schließen</button>
+		</footer>
+		<script src="leaflet/leaflet.js"></script>
+		<script src="leaflet/heatmap/dist/leaflet-heat.js"></script>
+		<script src="leaflet/jquery-3.4.1.min.js"></script>
+		<script>
+			var mymap = L.map('map').setView([48.210033,16.363449], 6)
+			mymap.options.minZoom = 6;
+			L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+				attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+			}).addTo(mymap);
+
+			$(document).ready(function(){
+
+			ZoomCheck();
+
+			var url = "ozon.json";
+			$.ajax({
+				url: url,
+				dataType: 'jsonp',
+				jsonpCallback: 'jsonpResponse',
+				success: function(response){
+					//console.log('callback ok:',response);
+					mapOzon(response);
+				},
+				error: function(xhr,status,error){
+					console.log(status +error);
+				}
+			});
+			var layerGroup;
+			});
+
+			function mapOzon(werte){
+
+			var allewerte=[];
+			$.each(werte, function(index, value){
+				allewerte.push([value['lat'],value['lon'],value['ozon1hMax']*3]);
+			});
+			var heat = L.heatLayer(allewerte, {radius: 55}).addTo(mymap);
+			}
+
+			document.getElementById('zoomIn').addEventListener('click', function () {
+	    mymap.setZoom(mymap.getZoom() + 1);
+			if(mymap.getZoom() < 6 ) { document.getElementById("zoomOut").disabled = true; } else { document.getElementById("zoomOut").disabled = false; }
+			console.log(mymap.getZoom());
+			});
+
+			document.getElementById('zoomOut').addEventListener('click', function () {
+			    mymap.setZoom(mymap.getZoom() - 1);
+					if(mymap.getZoom() <= 6 ) { document.getElementById("zoomOut").disabled = true; } else { document.getElementById("zoomOut").disabled = false; }
+			});
+
+			document.getElementById('resetToStart').addEventListener('click', function () {
+			    mymap.setZoom(6);
+					document.getElementById("zoomOut").disabled = true;
+			});
+
+			function ZoomCheck(){
+				if(mymap.getZoom() <= 6 ) { document.getElementById("zoomOut").disabled = true; } else { document.getElementById("zoomOut").disabled = false; }
+			}
+
+			document.getElementById('FensterSchliessen').addEventListener('click', function () {
+					window.close();
+			});
+		</script>
+	</body>
+</html>
